@@ -1,0 +1,278 @@
+openapi: '3.0.0'
+info:
+  title: Push-API
+  description: 'API zur Übermittlung der Bestellungen an das ExpertOrder Kassensoftware.<br><br><p style="font-size:1.5rem;"><b><h1>Verwenden Sie die folgenden Daten zu Testzwecken:</b><br>PUT: https://osp.expertorder.de/testPush<br>API_KEY: 9615d48a-cc88-4c3e-8e43-102047366a71</p>'
+  version: 1.0.2
+  contact:
+    name: API Support
+    email: support@expertorder.de
+    url: https://expertorder.de/support/
+  x-logo:
+    url: 'https://expertorder.de/images/eo_slide.jpg'
+    altText: ExpertOrder logo
+servers:
+  - url: https://osp.expertorder.de
+tags:
+  - name: Bestellung Übermittlung
+    description: 'Eine Bestellung an ExpertOrder übergeben. Akzeptierte Bestellungen werden 30 Sekunden aufbewahrt falls ziel ExpertOrder mit dem Service nicht verbunden ist.'
+paths:
+  /push:
+    put:
+      tags:
+        - Bestellung Übermittlung
+      parameters:
+        - in: header
+          name: API_KEY
+          description: 'Diese Api-Key identifiziert an welche ExpertOrder die Bestellung weiter geleitet werden soll.'
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/order'
+            examples:
+              Order1:
+                value:
+                  version: 1
+                  broker: 'TestShop.de'
+                  fromMobile: false
+                  clientIp: '192.168.1.2'
+                  id: '20221121114617984'
+                  oldid: '20221121114617988'
+                  ordertime: '2022-11-21T11:46:17.988Z'
+                  deliverytime: '2022-11-21T11:46:17.988Z'
+                  customerinfo: 'Quittung nicht vergessen'
+                  orderprice: 20.50
+                  orderdiscount: 0.0
+                  bonuscard: ''
+                  notification: false
+                  deliverycost: 0.0
+                  tip: 0.0
+                  customer: 
+                    phone: '01700000001'
+                    email: 'test@test.de'
+                    companyname: 'RevoutIT'
+                    departmentname: 'ExpertOrder'
+                    name: 'Revout'
+                    street: 'Ing.-Honnef-Str. 13'
+                    zip: '21509'
+                    location: 'Glinde'
+                    addressinfo: '1.OG'
+                  payment: 
+                    type: 1
+                    provider: ''
+                    transactionid: ''
+                    prepaid: 0.0
+                  items: [
+                    {count: 1,
+                    name: "Menü 1",
+                    price: 17.0,
+                    items: [
+                      {count: 1,
+                      name: "Sommer-Salat standard",
+                      price: 0.0,
+                      items: [
+                        {count: 1,
+                        name: "French Dressing",
+                        price: 0.0,
+                        items: []},
+                        {count: 1,
+                        name: "Brötchen zum Salat standard",
+                        price: 0.0,
+                        items: []}]},
+                      {count: 1,
+                      name: "Pizza Vegetaria small",
+                      price: 0.0,
+                      items: []},
+                      {count: 1,
+                      name: "Warme Pfannkuchen",
+                      price: 0.0,
+                      items: [
+                        {count: 1,
+                        name: "mit heißen Kirschen und Vanille-Sauce",
+                        price: 0.0,
+                        items: []}]}]},
+                    {count: 1,
+                    name: "Coca Cola 1l",
+                    price: 3.5,
+                    items: []}]
+      responses:
+        '200':
+          description: Die Bestellung wurde erfolgreich angenommen.
+        '400':
+          description: Header-Parameter sind unvollständig/nicht gesetzt.
+        '406':
+          description: Das JSON-Format ist nicht kompatibel.
+        '408':
+          description: Ziel ExpertOrder ist zur Zeit mit dem Service nicht verbunden.
+        '412':
+          description: Angegebene Api-Key ist unbekannt.
+        '500':
+          description: Etwas ist schief gelaufen.
+        '503':
+          description: ExpertOrder kann die Bestellung momentan nicht bearbeitet. 
+components:
+  schemas:
+    item:
+      type: object
+      description: Ein Artikel
+      properties:
+        uid:
+          type: string
+          description: Eindeutige ID des Artikels. Wenn gesetzt, dann wird die Zuordnung anhand dieser Nummer gemacht. Optional.
+        count:
+          type: number
+          description: Anzahl
+        name:
+          type: string
+          description: Artikelname.
+        info:
+          type: string
+          description: Zusätzliche Information zum Artikel. Optional.
+        price:
+          type: number
+        group:
+          type: string
+          description: Artikelgruppe. z.B. Pizzen, Salate oder Getränke. Wird verwendet, wenn dieser Artikel automatisch zur Speisekarte hinzugefügt werden soll. Optional.
+        type:
+          type: string
+          enum:
+            - FOOD
+            - NONFOOD
+          description: Gibt an, ob dieser Artikel Essen oder kein Essen ist. Relevant für MwSt.-Bestimmung. Wird verwendet, wenn dieser Artikel automatisch zur Speisekarte hinzugefügt werden soll. Optional.
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/item'
+          default: []
+      required:
+        - count
+        - name
+        - price
+    customer:
+      type: object
+      description: Kundendaten
+      properties:
+        phone:
+          type: string
+          description: Telefon
+        email:
+          type: string
+          format: email
+          description: E-Mail-Adresse
+        companyname:
+          type: string
+          description: Firmenname, wenn es eine Firma ist
+        departmentname:
+          type: string
+          description: Abteilung in der Firma
+        name:
+          type: string
+          description: Name des Kundens
+        street:
+          type: string
+          description: Straße und Hausnummer
+        zip:
+          type: string
+          description: PLZ
+        location:
+          type: string
+          description: Ort
+        addressinfo:
+          type: string
+          description: Zusätzliche Info zur Adresse, wenn schlecht zu finden ist.
+      required:
+        - phone
+        - name
+        - street
+        - zip
+        - location
+    payment:
+      type: object
+      properties:
+        type:
+          type: integer
+          description: 0 - Barzahlung<br> 1 - EC mit PIN vor Ort<br> 3 - Onlinezahlung<br>
+        provider:
+          type: string
+          description: Die Firma, die für das Bezahlen verantwirtlich ist. z.B. PayPal. Erforderlich, wenn type=3 ist. Onlinezahlung.
+        transactionid:
+          type: string
+          description: Die ID der Bezahl-Transaction. Erforderlich, wenn type=3 ist. Onlinezahlung.
+        prepaid:
+          type: number
+          description: Die Summe, die tatsächlich online Bezahlt wurde. Erforderlich, wenn type=3 ist. Onlinezahlung.
+      required:
+        - type
+    order:
+      type: object
+      properties:
+        version:
+          type: integer
+          description: Format-Version. Aktuell = 1
+        broker:
+          type: string
+          description: Name des OnlineshopsProvider
+        fromMobile:
+          type: boolean
+          description: true, wenn der Kunde mit dem Smartphone bestellt hat
+        clientIp:
+          type: string
+          description: die IP Adresse des Kundens
+        id:
+          type: string
+          description: OSP-Eindeutige ID der Bestellung
+        oldid:
+          type: string
+          description: Wenn die Bestellung eine Änderung ist, dann steht hier die ID der Bestellung, die geändert werden soll
+        ordertime:
+          type: string
+          format: date-time
+          description: Die Zeit, wann die Bestellung erstellt wurde. Format "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+        deliverytime:
+          type: string
+          format: date-time
+          description: Die gewünschte Lieferzeit. Wenn die Zeit nicht festgelegt wurde, dann soll diese Zeit gleich der Zeit der Bestellung sein. Format "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+        customerinfo:
+          type: string
+          description: Zusätzliche Information des Kundens
+        orderprice:
+          type: number
+          description: Gesamtpreis der Bestellung
+        orderdiscount:
+          type: number
+          description: Rabatt. Absoluter Betrag. Muss negativ sein.
+        bonuscard:
+          type: string
+          description: Die Nummer der Bonuskarte
+        notification:
+          type: boolean
+          description: Gibt an, ob der Kunde keine Lieferung wünscht, sondern selbst abholen möchte.
+        deliverycost:
+          type: number
+          description: Lieferkosten
+        tip:
+          type: number
+          description: Trinkgeld
+        customer:
+          $ref: '#/components/schemas/customer'
+        payment:
+          $ref: '#/components/schemas/payment'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/item'
+      required:
+        - version
+        - broker
+        - id
+        - ordertime
+        - deliverytime
+        - orderprice
+        - orderdiscount
+        - payment
+        - customer
+        - items
